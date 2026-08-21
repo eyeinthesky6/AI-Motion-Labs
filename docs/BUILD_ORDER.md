@@ -22,24 +22,29 @@ If that loop is solid, creator, product-video, training and AR/VR applications c
 
 ## M0 — Contract and repository foundation
 
-**Status: started.**
+**Status: scaffold complete; M1 runtime verification is next.**
 
-Build:
+Built:
 
 - Python package and CLI;
 - MotionSpec manifest models;
 - generic extractor interface;
 - MediaPipe reference extractor;
 - binary payload packaging;
-- validator;
+- model-independent validator;
 - source hashing and basic rights metadata;
-- architecture/research/licensing docs.
+- machine-readable MotionSpec JSON Schema;
+- architecture/research/licensing/quality docs;
+- lightweight CI and core contract tests;
+- agent guardrails and architecture decision record.
 
 Acceptance gate:
 
 - repository can explain the problem and its boundaries without relying on a UI mockup;
 - no provider-specific format is declared the universal format;
 - asset can be parsed/validated without MediaPipe installed.
+
+The core packager/validator has been smoke-tested in an isolated local harness with a synthetic MotionSpec payload. The actual MediaPipe video path still belongs to M1 and should not be called verified until real clips are run.
 
 Do **not** add yet:
 
@@ -59,7 +64,7 @@ Goal: prove that the current code works on ordinary clips before adding sophisti
 
 Build:
 
-1. lock a known MediaPipe Pose Landmarker model version/checksum in setup docs;
+1. use the official MediaPipe Pose Landmarker Full bundle documented in `models/README.md`, then record its observed SHA-256/checkpoint metadata;
 2. use 3–5 legal/owned short benchmark clips;
 3. run the CLI end-to-end;
 4. validate manifest/payload;
