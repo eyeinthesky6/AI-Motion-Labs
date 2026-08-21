@@ -15,9 +15,11 @@ Official model overview:
 
 https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker/index#models
 
-For the first M1 run, use the official **Pose Landmarker Full / float16** bundle unless the benchmark shows a reason to prefer Lite or Heavy:
+For the first M1 run, use the official **Pose Landmarker Full / float16 / version 1** bundle unless the benchmark shows a reason to prefer Lite or Heavy:
 
-https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task
+https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task
+
+Google's own current MediaPipe sample source uses this versioned `/1/` model URL for the Full variant. Prefer it over the `/latest/` alias for reproducibility.
 
 Save it locally as:
 
@@ -40,7 +42,7 @@ file_size
 mediapipe_package_version
 ```
 
-Then add the observed SHA-256 to the M1 benchmark manifest/setup note. The current Google URL uses `latest`, so **do not pretend the URL alone pins a model version**.
+Then add the observed SHA-256 to the M1 benchmark manifest/setup note. A versioned source URL is better than `latest`, but the byte hash remains the strongest record of the exact checkpoint used.
 
 The extractor already records the model filename and MediaPipe package version in MotionSpec. A later producer-provenance revision should also record the checkpoint SHA-256 directly in the manifest/run metadata.
 
