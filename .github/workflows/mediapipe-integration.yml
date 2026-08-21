@@ -1,0 +1,82 @@
+name: mediapipe-integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/mediapipe-integration.yml"
+      - "pyproject.toml"
+      - "src/aimotionlabs/**"
+      - "spec/**"
+
+jobs:
+  real-video-to-motionspec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install MediaPipe extraction stack
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[mediapipe]'
+
+      - name: Download versioned MediaPipe model and upstream test video
+        run: |
+          mkdir -p .integration-input out
+          curl --fail --location --retry 3 \
+            --output .integration-input/pose_landmarker_full.task \
+            https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task
+          curl --fail --location --retry 3 \
+            --output .integration-input/pose_squats.mp4 \
+            https://raw.githubusercontent.com/google-ai-edge/mediapipe/master/mediapipe/python/solutions/testdata/pose_squats.mp4
+          sha256sum .integration-input/pose_landmarker_full.task .integration-input/pose_squats.mp4
+
+      - name: Extract real video into MotionSpec
+        run: |
+          motionlab extract \
+            .integration-input/pose_squats.mp4 \
+            --out out/pose-squats.motion \
+            --model .integration-input/pose_landmarker_full.task
+
+      - name: Validate and inspect asset
+        run: |
+          motionlab validate out/pose-squats.motion
+          motionlab inspect out/pose-squats.motion
+          python - <<'PY'
+          from pathlib import Path
+          import numpy as np
+          from aimotionlabs.asset import validate_asset
+
+          asset = Path("out/pose-squats.motion")
+          manifest = validate_asset(asset)
+          assert manifest.source.frame_count > 0
+          assert manifest.tracks
+          assert manifest.extractor.name == "mediapipe_pose_landmarker"
+          assert manifest.quality.missing_frame_ratio < 0.50, manifest.quality
+
+          with np.load(asset / "payload" / "pose.npz", allow_pickle=False) as payload:
+              assert payload["timestamps_ms"].ndim == 1
+              assert payload["positions_2d"].shape[1:] == (33, 2)
+              assert payload["positions_3d"].shape[1:] == (33, 3)
+              assert payload["confidence"].shape[1:] == (33,)
+
+          print(manifest.model_dump_json(indent=2))
+          PY
+
+      - name: Upload generated MotionSpec artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mediapipe-pose-squats-motionspec
+          path: out/pose-squats.motion
+          if-no-files-found: error
+          retention-days: 7
