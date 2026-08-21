@@ -99,7 +99,7 @@ def package_motion_asset(
                 dtype=str(extracted.positions_2d.dtype),
                 shape=list(extracted.positions_2d.shape),
                 semantics="provider-native 2D joint positions",
-                coordinate_space_id="image_normalized",
+                coordinate_space_id=extracted.positions_2d_space_id,
             )
         )
 
@@ -111,7 +111,7 @@ def package_motion_asset(
                 dtype=str(extracted.positions_3d.dtype),
                 shape=list(extracted.positions_3d.shape),
                 semantics="provider-native 3D joint positions",
-                coordinate_space_id="mediapipe_pose_world",
+                coordinate_space_id=extracted.positions_3d_space_id,
             )
         )
 
