@@ -219,4 +219,6 @@ class MediaPipePoseExtractor:
                     "min_tracking_confidence": self.min_tracking_confidence,
                 },
             ),
+            positions_2d_space_id="image_normalized",
+            positions_3d_space_id="mediapipe_pose_world",
         )
