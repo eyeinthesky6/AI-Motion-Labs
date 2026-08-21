@@ -138,6 +138,10 @@ class MediaPipePoseExtractor:
                 if not ok:
                     break
 
+                # MediaPipe VIDEO mode requires a monotonically increasing frame
+                # timestamp. For the v0 constant-frame-rate path, derive it from
+                # frame index + container FPS. M2 adds an ffmpeg/ffprobe path for
+                # variable-frame-rate sources while preserving source time mapping.
                 timestamp_ms = int(round(frame_index * 1000.0 / fps))
                 frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
                 mp_image = mp.Image(
@@ -197,14 +201,15 @@ class MediaPipePoseExtractor:
                 CoordinateSpace(
                     id="mediapipe_pose_world",
                     dimensions=3,
-                    units="provider_world",
+                    units="meters",
                     handedness="unknown",
                     up_axis="unknown",
                     forward_axis="unknown",
-                    origin="MediaPipe provider-native pose world origin",
+                    origin="midpoint of the hips, per MediaPipe Pose Landmarker",
                     notes=(
-                        "Provider-relative world landmarks. Do not interpret this as a "
-                        "world-grounded root trajectory without an additional recovery stage."
+                        "Metric body-relative world landmarks from MediaPipe. The origin follows "
+                        "the subject, so this is not a global/world-grounded root trajectory. "
+                        "Recover camera and root motion in a separate enrichment stage."
                     ),
                 ),
             ],
