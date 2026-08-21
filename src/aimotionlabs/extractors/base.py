@@ -24,6 +24,8 @@ class ExtractedMotion:
     joint_set: JointSet
     coordinate_spaces: list[CoordinateSpace]
     extractor: ExtractorInfo
+    positions_2d_space_id: str | None = None
+    positions_3d_space_id: str | None = None
 
 
 class MotionExtractor(Protocol):
