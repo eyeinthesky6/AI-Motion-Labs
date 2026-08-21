@@ -57,19 +57,24 @@ The first reference extractor is **MediaPipe Pose Landmarker** because it is lig
 ```text
 docs/                         product, architecture, research and build notes
 spec/                         MotionSpec JSON Schema
+scripts/                      spec/dev helper scripts
 src/aimotionlabs/             core package
   extractors/                 replaceable video→motion backends
 examples/                     example manifests/assets
+tests/                        small contract/validator tests
 ```
 
 Read these first:
 
 - [`docs/PROBLEM.md`](docs/PROBLEM.md) — what we are fixing and what we are not.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — pipeline and component boundaries.
-- [`docs/BUILD_ORDER.md`](docs/BUILD_ORDER.md) — implementation order and acceptance gates.
-- [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) — MotionSpec and future persistence models.
-- [`docs/OSS_RESEARCH_MAP.md`](docs/OSS_RESEARCH_MAP.md) — tools/research to reuse, with licensing notes.
-- [`docs/RIGHTS_AND_PROVENANCE.md`](docs/RIGHTS_AND_PROVENANCE.md) — why v0 is upload-first rather than a YouTube downloader.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — pipeline, motion levels and component boundaries.
+- [`docs/BUILD_ORDER.md`](docs/BUILD_ORDER.md) — staged implementation order and acceptance gates.
+- [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) — MotionSpec and future hosted-service data models.
+- [`docs/OSS_RESEARCH_MAP.md`](docs/OSS_RESEARCH_MAP.md) — tools/research to reuse, with commercial-license lanes.
+- [`docs/RIGHTS_AND_PROVENANCE.md`](docs/RIGHTS_AND_PROVENANCE.md) — upload-first rights/provenance policy and why v0 is not a YouTube downloader.
+- [`docs/QUALITY_AND_BENCHMARKS.md`](docs/QUALITY_AND_BENCHMARKS.md) — how we decide whether an extracted motion is actually usable.
+- [`spec/README.md`](spec/README.md) — MotionSpec contract/versioning rules.
+- [`spec/motionspec-v0.1.schema.json`](spec/motionspec-v0.1.schema.json) — current machine-readable manifest schema.
 
 ## MotionSpec v0.1 asset shape
 
@@ -98,9 +103,25 @@ motionlab extract input.mp4 --out ./out/my-motion.motion --model ./models/pose_l
 
 # Validate an existing asset
 motionlab validate ./out/my-motion.motion
+
+# Inspect summary
+motionlab inspect ./out/my-motion.motion
 ```
 
 The CLI and extractor skeleton live in this repo; the first milestone is a reproducible 5–30 second, single-person clip → MotionSpec asset path.
+
+## Development checks
+
+Core tests deliberately do **not** install MediaPipe. That proves existing MotionSpec assets can be parsed and validated without the ML extraction environment.
+
+```bash
+pip install -e '.[dev]'
+ruff check .
+pytest -q
+python scripts/export_schema.py
+```
+
+GitHub Actions runs Ruff + the core tests on pushes/PRs.
 
 ## Design rules
 
@@ -111,7 +132,16 @@ The CLI and extractor skeleton live in this repo; the first milestone is a repro
 5. **Commercial path stays clean.** Research-only models/datasets may be benchmark plugins, not mandatory runtime dependencies.
 6. **Short clips first.** Optimize the first loop for roughly 5–30 second clips and one primary person.
 7. **Adapters, not forks.** A new extractor or renderer plugs into the same interfaces.
+8. **Motion quality must be visible.** Coverage, discontinuities and later contacts/export error are measured rather than hidden.
+
+## Project/repository license status
+
+**No project-wide open-source license has been selected yet.** The repository is public, but do not assume that means unrestricted reuse of AI Motion Labs code. We should choose the project license deliberately once the split between open MotionSpec/interchange pieces and any proprietary product/service layer is decided.
+
+Third-party dependencies, pretrained weights, body models and research datasets retain their own licenses; see `docs/OSS_RESEARCH_MAP.md`.
 
 ## Status
 
-**Foundation / v0.1.** The repository is being set up around the core `video → MotionSpec asset` pipeline before any creator UI, marketplace, enterprise training layer, or generative rendering product is added.
+**Foundation / v0.1.** The repository now has the MotionSpec data contract, reference extractor interface + MediaPipe adapter, asset packager/validator, CLI, machine-readable schema, core tests/CI, and the architecture/build/research/rights/quality documents.
+
+**Next executable milestone:** run M1 on a small rights-clean clip set, fix real decode/extraction issues, and add skeleton preview/QA before adding MMPose or any product UI.
