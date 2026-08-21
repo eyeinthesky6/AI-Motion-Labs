@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "CoordinateSpace": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {"title": "Id", "type": "string"},
+        "dimensions": {"enum": [2, 3], "title": "Dimensions", "type": "integer"},
+        "units": {"enum": ["normalized", "pixels", "meters", "provider_world", "unknown"], "title": "Units", "type": "string"},
+        "handedness": {"default": "unknown", "enum": ["right", "left", "unknown"], "title": "Handedness", "type": "string"},
+        "up_axis": {"default": "unknown", "enum": ["+x", "-x", "+y", "-y", "+z", "-z", "unknown"], "title": "Up Axis", "type": "string"},
+        "forward_axis": {"default": "unknown", "enum": ["+x", "-x", "+y", "-y", "+z", "-z", "unknown"], "title": "Forward Axis", "type": "string"},
+        "origin": {"title": "Origin", "type": "string"},
+        "notes": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": null, "title": "Notes"}
+      },
+      "required": ["id", "dimensions", "units", "origin"],
+      "title": "CoordinateSpace",
+      "type": "object"
+    },
+    "ExtractorInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {"title": "Name", "type": "string"},
+        "version": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": null, "title": "Version"},
+        "model": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": null, "title": "Model"},
+        "options": {"additionalProperties": true, "title": "Options", "type": "object"}
+      },
+      "required": ["name"],
+      "title": "ExtractorInfo",
+      "type": "object"
+    },
+    "JointSet": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {"title": "Id", "type": "string"},
+        "joint_names": {"items": {"type": "string"}, "title": "Joint Names", "type": "array"},
+        "connections": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [{"type": "integer"}, {"type": "integer"}],
+            "type": "array"
+          },
+          "title": "Connections",
+          "type": "array"
+        },
+        "provider": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": null, "title": "Provider"}
+      },
+      "required": ["id", "joint_names"],
+      "title": "JointSet",
+      "type": "object"
+    },
+    "MotionTrack": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {"title": "Id", "type": "string"},
+        "kind": {"enum": ["pose_landmarks", "joint_positions", "joint_rotations", "root_trajectory", "contacts", "camera", "events"], "title": "Kind", "type": "string"},
+        "joint_set_id": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": null, "title": "Joint Set Id"},
+        "payload_path": {"title": "Payload Path", "type": "string"},
+        "arrays": {"items": {"$ref": "#/$defs/PayloadArray"}, "title": "Arrays", "type": "array"}
+      },
+      "required": ["id", "kind", "payload_path", "arrays"],
+      "title": "MotionTrack",
+      "type": "object"
+    },
+    "PayloadArray": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {"title": "Name", "type": "string"},
+        "dtype": {"title": "Dtype", "type": "string"},
+        "shape": {"items": {"type": "integer"}, "title": "Shape", "type": "array"},
+        "semantics": {"title": "Semantics", "type": "string"},
+        "coordinate_space_id": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": null, "title": "Coordinate Space Id"}
+      },
+      "required": ["name", "dtype", "shape", "semantics"],
+      "title": "PayloadArray",
+      "type": "object"
+    },
+    "QualitySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "missing_frame_ratio": {"maximum": 1.0, "minimum": 0.0, "title": "Missing Frame Ratio", "type": "number"},
+        "mean_confidence": {"anyOf": [{"maximum": 1.0, "minimum": 0.0, "type": "number"}, {"type": "null"}], "default": null, "title": "Mean Confidence"},
+        "warnings": {"items": {"type": "string"}, "title": "Warnings", "type": "array"}
+      },
+      "required": ["missing_frame_ratio"],
+      "title": "QualitySummary",
+      "type": "object"
+    },
+    "RightsMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "source_attestation": {"default": "unknown", "enum": ["user_claims_rights", "licensed", "public_domain", "open_license", "unknown"], "title": "Source Attestation", "type": "string"},
+        "public_share_allowed": {"default": false, "title": "Public Share Allowed", "type": "boolean"},
+        "commercial_reuse_allowed": {"anyOf": [{"type": "boolean"}, {"type": "null"}], "default": null, "title": "Commercial Reuse Allowed"},
+        "license_id": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": null, "title": "License Id"},
+        "source_url": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": null, "title": "Source Url"},
+        "notes": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": null, "title": "Notes"}
+      },
+      "title": "RightsMetadata",
+      "type": "object"
+    },
+    "SourceVideo": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"default": "local_upload", "enum": ["local_upload", "owned_url_import", "licensed_source"], "title": "Kind", "type": "string"},
+        "original_filename": {"title": "Original Filename", "type": "string"},
+        "sha256": {"pattern": "^[a-f0-9]{64}$", "title": "Sha256", "type": "string"},
+        "size_bytes": {"minimum": 0, "title": "Size Bytes", "type": "integer"},
+        "width": {"exclusiveMinimum": 0, "title": "Width", "type": "integer"},
+        "height": {"exclusiveMinimum": 0, "title": "Height", "type": "integer"},
+        "fps": {"exclusiveMinimum": 0, "title": "Fps", "type": "number"},
+        "frame_count": {"exclusiveMinimum": 0, "title": "Frame Count", "type": "integer"},
+        "duration_s": {"exclusiveMinimum": 0, "title": "Duration S", "type": "number"}
+      },
+      "required": ["original_filename", "sha256", "size_bytes", "width", "height", "fps", "frame_count", "duration_s"],
+      "title": "SourceVideo",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "motionspec", "default": "motionspec", "title": "Schema Name", "type": "string"},
+    "schema_version": {"const": "0.1.0", "default": "0.1.0", "title": "Schema Version", "type": "string"},
+    "asset_id": {"title": "Asset Id", "type": "string"},
+    "created_at": {"title": "Created At", "type": "string"},
+    "source": {"$ref": "#/$defs/SourceVideo"},
+    "extractor": {"$ref": "#/$defs/ExtractorInfo"},
+    "coordinate_spaces": {"items": {"$ref": "#/$defs/CoordinateSpace"}, "title": "Coordinate Spaces", "type": "array"},
+    "joint_sets": {"items": {"$ref": "#/$defs/JointSet"}, "title": "Joint Sets", "type": "array"},
+    "tracks": {"items": {"$ref": "#/$defs/MotionTrack"}, "title": "Tracks", "type": "array"},
+    "rights": {"$ref": "#/$defs/RightsMetadata"},
+    "quality": {"$ref": "#/$defs/QualitySummary"},
+    "tags": {"items": {"type": "string"}, "title": "Tags", "type": "array"}
+  },
+  "required": ["asset_id", "created_at", "source", "extractor", "coordinate_spaces", "joint_sets", "tracks", "quality"],
+  "title": "MotionSpecManifest",
+  "type": "object",
+  "$id": "https://ai-motion-labs.dev/spec/motionspec-v0.1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}
