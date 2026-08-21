@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -186,7 +186,7 @@ def package_motion_asset(
 
     manifest = MotionSpecManifest(
         asset_id=_asset_id(source, extracted),
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
         source=source,
         extractor=extracted.extractor,
         coordinate_spaces=extracted.coordinate_spaces,
