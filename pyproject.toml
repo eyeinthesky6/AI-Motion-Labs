@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-motion-labs"
+version = "0.1.0"
+description = "Model-independent video-to-motion asset infrastructure"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26",
+  "pydantic>=2.8",
+  "typer>=0.12",
+]
+
+[project.optional-dependencies]
+mediapipe = [
+  "mediapipe>=0.10.30",
+  "opencv-python-headless>=4.10",
+]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+motionlab = "aimotionlabs.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aimotionlabs"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
