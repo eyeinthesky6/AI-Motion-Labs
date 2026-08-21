@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local models and large generated assets
+models/
+out/
+outputs/
+*.motion/
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.npz
+*.npy
+
+# Keep checked-in examples even if they contain generated-looking names
+!examples/**
