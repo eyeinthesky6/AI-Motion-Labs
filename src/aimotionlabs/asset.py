@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -57,15 +58,47 @@ def probe_video(video_path: str | Path) -> SourceVideo:
     )
 
 
+def _canonical_json_bytes(value: object) -> bytes:
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+
+
 def _asset_id(source: SourceVideo, extracted: ExtractedMotion) -> str:
+    """Build an ID from source, motion bytes and the semantics of those bytes.
+
+    Joint names/coordinate spaces/extractor metadata matter: identical numeric
+    arrays with different semantics must not accidentally receive the same ID.
+    Rights are intentionally excluded because changing visibility/licensing
+    metadata should not mutate the identity of the extracted motion itself.
+    """
+
     digest = hashlib.sha256()
-    digest.update(source.sha256.encode())
-    digest.update(extracted.extractor.name.encode())
-    digest.update((extracted.extractor.model or "").encode())
-    digest.update(extracted.timestamps_ms.tobytes())
+    digest.update(b"motionspec:0.1.0\0")
+    digest.update(source.sha256.encode("ascii"))
+    digest.update(
+        _canonical_json_bytes(
+            {
+                "extractor": extracted.extractor.model_dump(mode="json"),
+                "joint_set": extracted.joint_set.model_dump(mode="json"),
+                "coordinate_spaces": [
+                    space.model_dump(mode="json") for space in extracted.coordinate_spaces
+                ],
+                "positions_2d_space_id": extracted.positions_2d_space_id,
+                "positions_3d_space_id": extracted.positions_3d_space_id,
+            }
+        )
+    )
+    digest.update(np.ascontiguousarray(extracted.timestamps_ms).tobytes())
     for array in (extracted.positions_2d, extracted.positions_3d, extracted.confidence):
         if array is not None:
-            digest.update(np.ascontiguousarray(array).tobytes())
+            contiguous = np.ascontiguousarray(array)
+            digest.update(str(contiguous.dtype).encode("ascii"))
+            digest.update(_canonical_json_bytes(list(contiguous.shape)))
+            digest.update(contiguous.tobytes())
     return f"motion_{digest.hexdigest()[:24]}"
 
 
@@ -178,6 +211,17 @@ def package_motion_asset(
     return manifest
 
 
+def _safe_payload_path(asset_root: Path, relative_path: str) -> Path:
+    path = Path(relative_path)
+    if path.is_absolute():
+        raise ValueError(f"Payload path must be relative: {relative_path}")
+
+    resolved = (asset_root / path).resolve()
+    if not resolved.is_relative_to(asset_root.resolve()):
+        raise ValueError(f"Payload path escapes asset directory: {relative_path}")
+    return resolved
+
+
 def validate_asset(asset_dir: str | Path) -> MotionSpecManifest:
     asset_dir = Path(asset_dir)
     manifest = MotionSpecManifest.load(asset_dir / "manifest.json")
@@ -189,11 +233,13 @@ def validate_asset(asset_dir: str | Path) -> MotionSpecManifest:
         if track.joint_set_id and track.joint_set_id not in joint_set_ids:
             raise ValueError(f"Track {track.id} refers to unknown joint set {track.joint_set_id}")
 
-        payload_path = asset_dir / track.payload_path
+        payload_path = _safe_payload_path(asset_dir, track.payload_path)
         if not payload_path.exists():
             raise FileNotFoundError(f"Missing payload: {payload_path}")
 
         with np.load(payload_path, allow_pickle=False) as payload:
+            descriptors = {descriptor.name: descriptor for descriptor in track.arrays}
+
             for descriptor in track.arrays:
                 if descriptor.name not in payload:
                     raise ValueError(
@@ -218,5 +264,21 @@ def validate_asset(asset_dir: str | Path) -> MotionSpecManifest:
                         f"Array {descriptor.name} refers to unknown coordinate space "
                         f"{descriptor.coordinate_space_id}"
                     )
+
+            if "timestamps_ms" in descriptors:
+                timestamps = np.asarray(payload["timestamps_ms"])
+                if timestamps.ndim != 1:
+                    raise ValueError(f"Track {track.id} timestamps_ms must be one-dimensional")
+                if timestamps.size == 0:
+                    raise ValueError(f"Track {track.id} timestamps_ms must not be empty")
+                if np.any(np.diff(timestamps) <= 0):
+                    raise ValueError(f"Track {track.id} timestamps_ms must be strictly increasing")
+
+                if track.kind in {"pose_landmarks", "joint_positions", "joint_rotations"}:
+                    for name in ("positions_2d", "positions_3d", "confidence"):
+                        if name in descriptors and payload[name].shape[0] != timestamps.shape[0]:
+                            raise ValueError(
+                                f"Track {track.id} array {name} does not match timestamp count"
+                            )
 
     return manifest
