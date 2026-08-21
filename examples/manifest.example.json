@@ -1,0 +1,87 @@
+{
+  "schema_name": "motionspec",
+  "schema_version": "0.1.0",
+  "asset_id": "motion_example00000000000000",
+  "created_at": "2026-08-21T00:00:00+00:00",
+  "source": {
+    "kind": "local_upload",
+    "original_filename": "example.mp4",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "size_bytes": 1234567,
+    "width": 1080,
+    "height": 1920,
+    "fps": 30.0,
+    "frame_count": 300,
+    "duration_s": 10.0
+  },
+  "extractor": {
+    "name": "example_extractor",
+    "version": "1.0.0",
+    "model": "example-model",
+    "options": {
+      "primary_person": 0
+    }
+  },
+  "coordinate_spaces": [
+    {
+      "id": "image_normalized",
+      "dimensions": 2,
+      "units": "normalized",
+      "handedness": "unknown",
+      "up_axis": "-y",
+      "forward_axis": "unknown",
+      "origin": "top-left of image"
+    }
+  ],
+  "joint_sets": [
+    {
+      "id": "example_body_3",
+      "joint_names": ["left_shoulder", "right_shoulder", "pelvis"],
+      "connections": [[0, 1], [0, 2], [1, 2]],
+      "provider": "example"
+    }
+  ],
+  "tracks": [
+    {
+      "id": "body_pose",
+      "kind": "pose_landmarks",
+      "joint_set_id": "example_body_3",
+      "payload_path": "payload/pose.npz",
+      "arrays": [
+        {
+          "name": "timestamps_ms",
+          "dtype": "int64",
+          "shape": [300],
+          "semantics": "monotonic frame timestamp in milliseconds"
+        },
+        {
+          "name": "positions_2d",
+          "dtype": "float32",
+          "shape": [300, 3, 2],
+          "semantics": "example 2D joint positions",
+          "coordinate_space_id": "image_normalized"
+        },
+        {
+          "name": "confidence",
+          "dtype": "float32",
+          "shape": [300, 3],
+          "semantics": "per-frame per-joint observation confidence"
+        }
+      ]
+    }
+  ],
+  "rights": {
+    "source_attestation": "user_claims_rights",
+    "public_share_allowed": false,
+    "commercial_reuse_allowed": null,
+    "license_id": null,
+    "source_url": null,
+    "notes": "Illustrative manifest only; no payload is committed with this example."
+  },
+  "quality": {
+    "missing_frame_ratio": 0.0,
+    "mean_confidence": 0.94,
+    "warnings": []
+  },
+  "tags": ["example"]
+}
