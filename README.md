@@ -37,7 +37,7 @@ The **MotionSpec** is the product boundary. Extraction backends are replaceable.
 5. Emit a self-describing MotionSpec asset directory.
 6. Validate the asset without requiring the extraction model.
 
-The first reference extractor is **MediaPipe Pose Landmarker** because it is light, works on ordinary video, returns 33 landmarks plus world landmarks, and the MediaPipe codebase is Apache-2.0. It is a bootstrap backend, not the final quality ceiling.
+The first reference extractor is **MediaPipe Pose Landmarker** because it is light, works on ordinary video, returns 33 landmarks plus metric hip-centered world landmarks, and the MediaPipe codebase is Apache-2.0. It is a bootstrap backend, not the final quality ceiling.
 
 ### Later, without changing the core asset contract
 
@@ -55,7 +55,9 @@ The first reference extractor is **MediaPipe Pose Landmarker** because it is lig
 ## Repository map
 
 ```text
+AGENTS.md                     guardrails for AI/code agents
 docs/                         product, architecture, research and build notes
+models/                       external-model setup notes; model files ignored
 spec/                         MotionSpec JSON Schema
 scripts/                      spec/dev helper scripts
 src/aimotionlabs/             core package
@@ -66,13 +68,16 @@ tests/                        small contract/validator tests
 
 Read these first:
 
+- [`AGENTS.md`](AGENTS.md) — scope/architecture rules for coding agents.
 - [`docs/PROBLEM.md`](docs/PROBLEM.md) — what we are fixing and what we are not.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — pipeline, motion levels and component boundaries.
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — initial architecture decisions and deliberately deferred choices.
 - [`docs/BUILD_ORDER.md`](docs/BUILD_ORDER.md) — staged implementation order and acceptance gates.
 - [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) — MotionSpec and future hosted-service data models.
 - [`docs/OSS_RESEARCH_MAP.md`](docs/OSS_RESEARCH_MAP.md) — tools/research to reuse, with commercial-license lanes.
 - [`docs/RIGHTS_AND_PROVENANCE.md`](docs/RIGHTS_AND_PROVENANCE.md) — upload-first rights/provenance policy and why v0 is not a YouTube downloader.
 - [`docs/QUALITY_AND_BENCHMARKS.md`](docs/QUALITY_AND_BENCHMARKS.md) — how we decide whether an extracted motion is actually usable.
+- [`models/README.md`](models/README.md) — external-model/checkpoint handling for reproducible runs.
 - [`spec/README.md`](spec/README.md) — MotionSpec contract/versioning rules.
 - [`spec/motionspec-v0.1.schema.json`](spec/motionspec-v0.1.schema.json) — current machine-readable manifest schema.
 
@@ -98,8 +103,10 @@ pip install -e .
 # Install reference video extractor
 pip install -e '.[mediapipe]'
 
-# Extract (requires a MediaPipe pose-landmarker .task model path)
-motionlab extract input.mp4 --out ./out/my-motion.motion --model ./models/pose_landmarker.task
+# Put the official Pose Landmarker model under models/; see models/README.md
+
+# Extract
+motionlab extract input.mp4 --out ./out/my-motion.motion --model ./models/pose_landmarker_full.task
 
 # Validate an existing asset
 motionlab validate ./out/my-motion.motion
@@ -108,7 +115,7 @@ motionlab validate ./out/my-motion.motion
 motionlab inspect ./out/my-motion.motion
 ```
 
-The CLI and extractor skeleton live in this repo; the first milestone is a reproducible 5–30 second, single-person clip → MotionSpec asset path.
+The first executable milestone is a reproducible 5–30 second, single-person clip → MotionSpec asset path.
 
 ## Development checks
 
@@ -121,7 +128,7 @@ pytest -q
 python scripts/export_schema.py
 ```
 
-GitHub Actions runs Ruff + the core tests on pushes/PRs.
+GitHub Actions is configured to run Ruff + the core tests on pushes/PRs.
 
 ## Design rules
 
@@ -142,6 +149,6 @@ Third-party dependencies, pretrained weights, body models and research datasets 
 
 ## Status
 
-**Foundation / v0.1.** The repository now has the MotionSpec data contract, reference extractor interface + MediaPipe adapter, asset packager/validator, CLI, machine-readable schema, core tests/CI, and the architecture/build/research/rights/quality documents.
+**Foundation / v0.1 scaffold complete.** The repository now has the MotionSpec data contract, reference extractor interface + MediaPipe adapter, asset packager/validator, CLI, machine-readable schema, core contract tests/CI, agent guardrails, and the architecture/build/research/rights/quality documents. The model-independent packager/validator has also been smoke-tested with a synthetic payload in an isolated local harness.
 
-**Next executable milestone:** run M1 on a small rights-clean clip set, fix real decode/extraction issues, and add skeleton preview/QA before adding MMPose or any product UI.
+**Next executable milestone:** M1 — run the actual MediaPipe path on a small rights-clean clip set, record the checkpoint hash/runtime/coverage, fix real decode/extraction issues, and then add skeleton preview/QA before MMPose or any product UI.
