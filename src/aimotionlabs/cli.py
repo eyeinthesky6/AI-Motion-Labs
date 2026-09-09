@@ -8,6 +8,7 @@ import typer
 from aimotionlabs.asset import package_motion_asset, validate_asset
 from aimotionlabs.extractors.mediapipe_pose import MediaPipePoseExtractor
 from aimotionlabs.models import RightsMetadata
+from aimotionlabs.preview import render_skeleton_preview
 from aimotionlabs.quality import analyze_asset
 
 app = typer.Typer(
@@ -108,6 +109,25 @@ def quality_report(
         typer.echo(f"normalized bone-length std: {bone_std:.4f}")
     for warning in report["warnings"]:
         typer.echo(f"warning: {warning}")
+
+
+@app.command("preview")
+def preview(
+    asset: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    source: Path = typer.Option(..., "--source", "-s", exists=True, dir_okay=False, readable=True),
+    out: Path = typer.Option(..., "--out", "-o", help="Output preview MP4"),
+    skeleton_only: bool = typer.Option(False, "--skeleton-only"),
+    scale: float = typer.Option(1.0, min=0.1, max=2.0),
+) -> None:
+    """Render source video with extracted skeleton overlay for human QA."""
+    output = render_skeleton_preview(
+        asset,
+        source,
+        out,
+        skeleton_only=skeleton_only,
+        scale=scale,
+    )
+    typer.echo(f"Created preview: {output}")
 
 
 if __name__ == "__main__":
