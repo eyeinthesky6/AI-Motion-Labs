@@ -9,6 +9,7 @@ from aimotionlabs.asset import validate_asset
 
 def render_skeleton_preview(
     asset_dir: str | Path,
+    source_video: str | Path,
     output: str | Path,
     *,
     skeleton_only: bool = False,
@@ -22,12 +23,9 @@ def render_skeleton_preview(
 
     root = Path(asset_dir)
     manifest = validate_asset(root)
-    source = root / manifest.source.original_filename
+    source = Path(source_video)
     if not source.exists():
-        raise FileNotFoundError(
-            "Original source video is not stored inside the MotionSpec asset; "
-            "preview requires the original video path to be supplied separately."
-        )
+        raise FileNotFoundError(f"Source video not found: {source}")
 
     track = next((t for t in manifest.tracks if t.id == "body_pose"), None)
     if track is None:
@@ -41,15 +39,15 @@ def render_skeleton_preview(
     if not cap.isOpened():
         raise RuntimeError(f"Could not open source video: {source}")
 
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    src_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    src_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = float(cap.get(cv2.CAP_PROP_FPS))
-    if width <= 0 or height <= 0 or fps <= 0:
+    if src_width <= 0 or src_height <= 0 or fps <= 0:
         cap.release()
         raise RuntimeError("Could not determine source video dimensions/FPS")
 
-    width = max(1, int(round(width * scale)))
-    height = max(1, int(round(height * scale)))
+    width = max(1, int(round(src_width * scale)))
+    height = max(1, int(round(src_height * scale)))
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -73,6 +71,8 @@ def render_skeleton_preview(
             if not ok:
                 break
 
+            if scale != 1.0:
+                frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
             canvas = np.zeros_like(frame) if skeleton_only else frame
             if skeleton_only:
                 canvas[:] = 245
