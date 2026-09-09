@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import typer
@@ -7,6 +8,7 @@ import typer
 from aimotionlabs.asset import package_motion_asset, validate_asset
 from aimotionlabs.extractors.mediapipe_pose import MediaPipePoseExtractor
 from aimotionlabs.models import RightsMetadata
+from aimotionlabs.quality import analyze_asset
 
 app = typer.Typer(
     name="motionlab",
@@ -79,6 +81,33 @@ def inspect(
     typer.echo(f"extractor: {manifest.extractor.name}")
     typer.echo(f"tracks: {', '.join(track.id for track in manifest.tracks)}")
     typer.echo(f"public_share_allowed: {manifest.rights.public_share_allowed}")
+
+
+@app.command("quality")
+def quality_report(
+    asset: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    json_output: bool = typer.Option(False, "--json", help="Emit machine-readable JSON"),
+) -> None:
+    """Analyze motion coverage and temporal QA signals without modifying the asset."""
+    report = analyze_asset(asset)
+    if json_output:
+        typer.echo(json.dumps(report, indent=2))
+        return
+
+    typer.echo(f"asset_id: {report['asset_id']}")
+    typer.echo(f"coverage: {report['coverage_ratio']:.1%}")
+    typer.echo(f"missing frames: {report['missing_frame_ratio']:.1%}")
+    confidence = report["confidence"]
+    if confidence["mean"] is not None:
+        typer.echo(f"confidence mean/p10: {confidence['mean']:.3f} / {confidence['p10']:.3f}")
+    velocity = report["joint_velocity"]
+    if velocity and velocity["p95"] is not None:
+        typer.echo(f"joint velocity p95/max: {velocity['p95']:.3f} / {velocity['max']:.3f}")
+    bone_std = report["normalized_bone_length_std"]
+    if bone_std is not None:
+        typer.echo(f"normalized bone-length std: {bone_std:.4f}")
+    for warning in report["warnings"]:
+        typer.echo(f"warning: {warning}")
 
 
 if __name__ == "__main__":
