@@ -1,8 +1,10 @@
 # AI Motion Labs
 
+**Status: PAUSED / R&D REFERENCE**
+
 **Video in → reusable motion asset out.**
 
-AI Motion Labs is a model-independent motion infrastructure project. The first goal is intentionally narrow: take a short human-action video, extract motion once, normalize it into a reusable **MotionSpec** asset, and make that asset portable across future renderers, video models, 3D/AR/VR pipelines, training systems, and motion libraries.
+AI Motion Labs began as a model-independent motion infrastructure experiment. Active product development is now **paused** after competitive/research review showed that much of generic video-to-motion, motion transfer, retargeting and video modification is already available in commercial and open-source tools. The original goal was intentionally narrow: take a short human-action video, extract motion once, normalize it into a reusable **MotionSpec** asset, and make that asset portable across future renderers, video models, 3D/AR/VR pipelines, training systems, and motion libraries.
 
 The project is **not** starting as another video generator. Existing pose, motion-recovery, animation, and rendering tools already solve large pieces of the stack. Our job is to stitch the good pieces together behind a stable motion asset contract.
 
@@ -67,6 +69,8 @@ tests/                        small contract/validator tests
 ```
 
 Read these first:
+
+- [`docs/PROJECT_PAUSE_AND_RESUMPTION.md`](docs/PROJECT_PAUSE_AND_RESUMPTION.md) — **current project decision**: what we learned, existing alternatives/components, why active development is paused, pain points worth watching, and explicit criteria for restarting.
 
 - [`AGENTS.md`](AGENTS.md) — scope/architecture rules for coding agents.
 - [`docs/PROBLEM.md`](docs/PROBLEM.md) — what we are fixing and what we are not.
@@ -149,6 +153,8 @@ Third-party dependencies, pretrained weights, body models and research datasets 
 
 ## Status
 
-**Foundation / v0.1 scaffold complete.** The repository now has the MotionSpec data contract, reference extractor interface + MediaPipe adapter, asset packager/validator, CLI, machine-readable schema, core contract tests/CI, agent guardrails, and the architecture/build/research/rights/quality documents. The model-independent packager/validator has also been smoke-tested with a synthetic payload in an isolated local harness.
+**PAUSED / R&D REFERENCE (September 2026).** The foundation exists: MotionSpec v0.1, extractor abstraction + MediaPipe adapter, packager/validator, CLI, quality diagnostics, skeleton-preview tooling, schema, tests and research/rights documentation. However, the project should **not** continue through the old milestone roadmap by inertia.
 
-**Next executable milestone:** M1 — run the actual MediaPipe path on a small rights-clean clip set, record the checkpoint hash/runtime/coverage, fix real decode/extraction issues, and then add skeleton preview/QA before MMPose or any product UI.
+Research found that generic video-to-motion, motion retargeting/export, reference-motion character animation and broad video modification are already served by products and OSS/research such as Rokoko, DeepMotion, Plask, Kling/Luma-style motion/video controls, Wan2.2-Animate, MMPose, WHAM/GVHMR, PyMotion and related tooling. The remaining interesting failures tend to be specialist problems: high-quality retargeting/cleanup, contacts, root-vs-camera motion, human-object interaction, precision continuity and cross-tool reuse.
+
+**There is currently no next executable milestone.** Resume only when a real user/workflow exposes a specific repeated failure that existing tools cannot solve adequately. At that point, build the smallest missing component and reuse existing tooling for everything else. See [`docs/PROJECT_PAUSE_AND_RESUMPTION.md`](docs/PROJECT_PAUSE_AND_RESUMPTION.md) for the full decision record, restart questions, pain points to watch and kill criteria.
